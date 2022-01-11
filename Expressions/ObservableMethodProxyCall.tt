@@ -1,0 +1,125 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
+
+namespace NMF.Expressions
+{
+<#
+    for(int i = 0; i <= 15; i++)
+    {
+#>
+    internal class ObservableMethodProxyCall<T, <# for (int j = 1; j <= i; j++) { #>T<#= j #>, <# } #>TResult> : ObservableProxyCallBase<TResult>
+    {
+        public ObservableMethodProxyCall(MethodCallExpression node, ObservableExpressionBinder binder, MethodInfo proxyMethod)
+            : this(binder.VisitObservable<T>(ExpressionHelper.GetArg(node, 0)), proxyMethod<# for (int j = 1; j <= i; j++) { #>, binder.VisitObservable<T<#= j #>>(ExpressionHelper.GetArg(node, <#= j #>))<# } #>) { }
+
+        public ObservableMethodProxyCall(INotifyExpression<T> target, MethodInfo proxyFunction<# for (int j = 1; j <= i; j++) { #>, INotifyExpression<T<#= j #>> arg<#= j #><# } #>)
+        {
+            if (target == null) throw new ArgumentNullException("target");
+            if (proxyFunction == null) throw new ArgumentNullException("proxyFunction");
+<# for (int j = 1; j <= i; j++) { #>
+            if (arg<#= j #> == null) throw new ArgumentNullException("arg<#= j #>");
+<# } #>
+
+            Target = target;
+            ProxyMethod = proxyFunction;
+<# for (int j = 1; j <= i; j++) { #>
+            Argument<#= j #> = arg<#= j #>;
+<# } #>
+        }
+
+        public INotifyExpression<T> Target { get; private set; }
+<# for (int j = 1; j <= i; j++) { #>
+        public INotifyExpression<T<#= j #>> Argument<#= j #> { get; private set; }
+<# } #>
+
+        public Func<<# for (int j = 1; j <= i; j++) { #>T<#= j #>, <# } #>INotifyValue<TResult>> ProxyFunction { get; private set; }
+
+        public MethodInfo ProxyMethod { get; private set; }
+		
+        protected override string ProxyMethodName => ProxyMethod.Name;
+
+        public override IEnumerable<INotifiable> Dependencies
+        {
+            get
+            {
+                if (Proxy != null)
+                    yield return Proxy;
+
+                yield return Target;
+            }
+        }
+
+        private void RenewProxyFunction()
+        {
+            ProxyFunction = ReflectionHelper.CreateDelegate(typeof(Func<<# for (int j = 1; j <= i; j++) { #>T<#= j #>, <# } #>INotifyValue<TResult>>), Target.Value, ProxyMethod) as Func<<# for (int j = 1; j <= i; j++) { #>T<#= j #>, <# } #>INotifyValue<TResult>>;
+        }
+
+        protected override INotifyValue<TResult> CreateProxy()
+        {
+            return ProxyFunction(<# if (i > 0) { #>Argument1.Value<# } for (int j = 2; j <= i; j++) { #>, Argument<#= j #>.Value<# } #>);
+        }
+
+        public override bool IsParameterFree
+        {
+            get { return Target.IsParameterFree<# for (int j = 1; j <= i; j++) { #> && Argument<#= j #>.IsParameterFree<# } #>; }
+        }
+
+        public override INotifyExpression<TResult> Reduce()
+        {
+            if (Target.IsConstant<# for (int j = 1; j <= i; j++) { #> && Argument<#= j #>.IsConstant<# } #>)
+            {
+                var proxyCasted = Proxy as INotifyExpression<TResult>;
+                if (proxyCasted != null)
+                {
+                    return proxyCasted;
+                }
+                else
+                {
+                    return new ObservableProxyExpression<TResult>(Proxy);
+                }
+            }
+            return this;
+        }
+
+        protected override INotifyExpression<TResult> ApplyParametersCore(IDictionary<string, object> parameters, IDictionary<INotifiable, INotifiable> trace)
+        {
+            return new ObservableMethodProxyCall<T, <# for (int j = 1; j <= i; j++) { #>T<#= j #>, <# } #>TResult>(Target.ApplyParameters(parameters, trace), ProxyMethod<# for (int j = 1; j <= i; j++) { #>, Argument<#= j #>.ApplyParameters(parameters, trace)<# } #>);
+        }
+
+        public override INotificationResult Notify(IList<INotificationResult> sources)
+        {
+            RenewProxyFunction();
+            return base.Notify(sources);
+        }
+
+        protected override void OnAttach()
+        {
+            RenewProxyFunction();
+
+<# for (int j = 1; j <= i; j++) { #>
+            Argument<#= j #>.Successors.SetDummy();
+<# } #>
+
+            RenewProxy();
+
+<# for (int j = 1; j <= i; j++) { #>
+            if (!Argument<#= j #>.Successors.HasSuccessors)
+                Argument<#= j #>.Successors.Set(this);
+<# } #>
+        }
+    }
+<#
+    } 
+#>
+}

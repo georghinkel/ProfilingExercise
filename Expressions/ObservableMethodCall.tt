@@ -1,0 +1,79 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
+
+namespace NMF.Expressions
+{
+<#
+    for(int i = 0; i <= 15; i++)
+    {
+#>
+    internal class ObservableMethodCall<T, <# for (int j = 1; j <= i; j++) { #>T<#= j #>, <# } #>TResult> : ObservableMethodBase<T, Func<<# for (int j = 1; j <= i; j++) { #>T<#= j #>, <# } #>TResult>, TResult>
+    {
+        public ObservableMethodCall(MethodCallExpression node, ObservableExpressionBinder binder)
+            : this(binder.VisitObservable<T>(node.Object), node.Method<# for (int j = 1; j <= i; j++) { #>, binder.VisitObservable<T<#= j #>>(node.Arguments[<#= j-1 #>])<# } #>) { }
+
+        public ObservableMethodCall(INotifyExpression<T> target, MethodInfo method<# for (int j = 1; j <= i; j++) { #>, INotifyExpression<T<#= j #>> arg<#= j #><# } #>)
+            : base(target, method)
+        {
+<# for (int j = 1; j <= i; j++) { #>
+            if (arg<#= j #> == null) throw new ArgumentNullException("arg<#= j #>");
+<# } #>
+
+<# for (int j = 1; j <= i; j++) { #>
+            Argument<#= j #> = arg<#= j #>;
+<# } #>
+        }
+
+<# for (int j = 1; j <= i; j++) { #>
+        public INotifyExpression<T<#= j #>> Argument<#= j #> { get; private set; }
+<# } #>
+
+        public override bool IsConstant
+        {
+            get
+            {
+                return Target.IsConstant<# for (int j = 1; j <= i; j++) { #> && Argument<#= j #>.IsConstant<# } #>;
+            }
+        }
+
+        public override bool IsParameterFree
+        {
+            get { return Target.IsParameterFree<# for (int j = 1; j <= i; j++) { #> && Argument<#= j #>.IsParameterFree<# } #>; }
+        }
+
+        public override IEnumerable<INotifiable> Dependencies
+        {
+            get
+            {
+                yield return Target;
+<# for (int j = 1; j <= i; j++) { #>
+                yield return Argument<#= j #>;
+<# } #>
+            }
+        }
+
+        protected override TResult GetValue()
+        {
+            return Function(<# if (i > 0) { #>Argument1.Value<# } for (int j = 2; j <= i; j++) { #>, Argument<#= j #>.Value<# } #>);
+        }
+
+        protected override INotifyExpression<TResult> ApplyParametersCore(IDictionary<string, object> parameters, IDictionary<INotifiable, INotifiable> trace)
+        {
+            return new ObservableMethodCall<T, <# for (int j = 1; j <= i; j++) { #>T<#= j #>, <# } #>TResult>(Target.ApplyParameters(parameters, trace), Method<# for (int j = 1; j <= i; j++) { #>, Argument<#= j #>.ApplyParameters(parameters, trace)<# } #>);
+        }
+    }
+<#
+    } 
+#>
+}

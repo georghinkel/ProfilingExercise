@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "environmentVariables": {},
+      "distributionName": ""
+    },
+    "Incremental": {
+      "commandName": "Project",
+      "commandLineArgs": "incremental"
+    },
+    "Batch": {
+      "commandName": "Project",
+      "commandLineArgs": "batch"
+    }
+  }
+}

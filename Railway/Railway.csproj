@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	  <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	  <AssemblyName>Railway</AssemblyName>
+	  <RootNamespace>Railway</RootNamespace>
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="railway.nmeta" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="railway.nmeta" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Collections\Collections.csproj" />
+    <ProjectReference Include="..\Expressions.Linq\Expressions.Linq.csproj" />
+    <ProjectReference Include="..\Expressions\Expressions.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
+    <ProjectReference Include="..\Serialization\Serialization.csproj" />
+  </ItemGroup>
+
+	<PropertyGroup>
+		<OutputPath>..\Build\</OutputPath>
+	</PropertyGroup>
+
+</Project>
