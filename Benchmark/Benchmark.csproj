@@ -2,12 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Program.cs~RF29a6de36.TMP" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Collections\Collections.csproj" />
